@@ -17,10 +17,7 @@ class Section:
     distances <numpy 1D-array>: cumulative distance from first point along the profile
     nb_points <int>: number of points
     limits <{limit_name: point_numbering}>: position of limits
-
-    nb_layers: number of sediment layers
     layer_elev <numpy 2D-array>: (nb_layers, nb_points)
-    layer_names <[str]>: (nb_layers)
     """
     def __init__(self, id, name, PK):
         self.id = id
@@ -33,10 +30,7 @@ class Section:
         self.distances = np.array([])
         self.nb_points = 0
         self.limits = {}
-
-        self.nb_layers = 0
         self.layers_elev = None
-        self.layer_names = []
 
     def get_limit(self, limit_name):
         try:
@@ -69,15 +63,18 @@ class Section:
             self.distances[i] = self.distances[i - 1] + \
                                 sqrt((self.x[i] - self.x[i - 1])**2 + (self.y[i] - self.y[i - 1])**2)
 
-    def add_layer(self, name, thickness):
-        self.nb_layers += 1
-        self.layer_names.append(name)
-
+    def add_layer(self, thickness):
         if self.layers_elev is None:
-            self.layers_elev = np.empty((self.nb_layers, self.nb_points))
+            self.layers_elev = np.empty((1, self.nb_points))
             self.layers_elev[0, :] = self.z - thickness
         else:
-            self.layers_elev = np.vstack((self.layers_elev, self.layers_elev[self.nb_layers - 2] - thickness))
+            self.layers_elev = np.vstack((self.layers_elev, self.layers_elev[self.nb_layers() - 2] - thickness))
+
+    def nb_layers(self):
+        if self.layers_elev is None:
+            return 0
+        else:
+            return self.layers_elev.shape[0]
 
     def iter_on_points(self):
         for i, (x, y, z) in enumerate(zip(self.x, self.y, self.z)):

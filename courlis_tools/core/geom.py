@@ -1,3 +1,4 @@
+from math import sqrt
 import shapefile
 
 from .section import Section
@@ -7,6 +8,10 @@ from .utils import GeometryRequestException
 class Geometry:
     """
     Representation of a 1D hydro-sedimentological model
+
+    sections <Section>: list of sections
+    nb_layers <int>: number of sediment layers
+    layer_names <[str]>: (nb_layers)
     """
     COURLIS_FLOAT_FMT = '%.6f'
     ST_SECTION_ENDING = '     999.9990     999.9990     999.9990 '
@@ -15,6 +20,8 @@ class Geometry:
         self.iter_pos = 0
         self.filename = filename
         self.sections = []
+        self.nb_layers = 0
+        self.layer_names = []
         try:
             if filename.endswith('.ST'):
                 self.load_ST()
@@ -68,6 +75,12 @@ class Geometry:
                 if line == '':
                     eof = True
 
+    def add_layer(self, name, thickness):
+        self.nb_layers += 1
+        self.layer_names.append(name)
+        for section in self.sections:
+            section.add_layer(thickness)
+
     def save_ST(self, filename):
         with open(filename, 'w') as fileout:
             for section in self.sections:
@@ -115,12 +128,37 @@ class Geometry:
                         fileout.write('%f %f B %f %f\n' % (dist, z, x, y))
                 elif not ref and layers:
                     for i, (dist, z) in enumerate(zip(section.distances, section.z)):
-                        layers_str = ' '.join([Geometry.COURLIS_FLOAT_FMT % zl for zl in section.layers_elev[:, i]])
-                        fileout.write('%f %f %s B\n' % (dist, z, layers_str))
+                        if self.nb_layers == 0:
+                            layers_str = ''
+                        else:
+                            layers_str = ' ' + ' '.join([Geometry.COURLIS_FLOAT_FMT % zl
+                                                         for zl in section.layers_elev[:, i]])
+                        fileout.write('%f %f%s B\n' % (dist, z, layers_str))
                 elif ref and layers:
                     for i, (dist, x, y, z) in enumerate(zip(section.distances, section.x, section.y, section.z)):
-                        layers_str = ' '.join([Geometry.COURLIS_FLOAT_FMT % zl for zl in section.layers_elev[:, i]])
-                        fileout.write('%f %f %s B %f %f\n' % (dist, z, layers_str, x, y))
+                        if self.nb_layers == 0:
+                            layers_str = ''
+                        else:
+                            layers_str = ' ' + ' '.join([Geometry.COURLIS_FLOAT_FMT % zl
+                                                         for zl in section.layers_elev[:, i]])
+                        fileout.write('%f %f%s B %f %f\n' % (dist, z, layers_str, x, y))
+
+    def save_shp(self, filename):
+        w = shapefile.Writer(shapefile.POINTZ)
+        w.field('profil', 'C', '32')
+        w.field('PK', 'N', decimal=6)
+        w.field('dist', 'N', decimal=6)
+        for name in self.layer_names:
+            w.field(name, 'N', decimal=6)
+        for section in self.sections:
+            for i, (dist, x, y, z) in enumerate(zip(section.distances, section.x, section.y, section.z)):
+                w.point(x, y, z)
+                if self.nb_layers == 0:
+                    layers_elev = []
+                else:
+                    layers_elev = section.layers_elev[:, 2]
+                w.record(section.name, section.PK, dist, *layers_elev)
+        w.save(filename)
 
     def export_trace_shp(self, filename):
         w = shapefile.Writer(shapefile.POLYLINEZ)

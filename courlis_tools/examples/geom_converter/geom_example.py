@@ -10,15 +10,15 @@ try:
     # Save as ST file
     geometry.save_ST('Bief_1_out.ST')
 
-    # Add some deposit layers
-    for section in geometry:
-        section.add_layer('sable', 1.0)
-        section.add_layer('vase', 2.0)
+    # Add some constant deposit layers
+    geometry.add_layer('sable', 1.0)
+    geometry.add_layer('vase', 2.0)
 
     # Export as georefC
     geometry.save_courlis('Bief_1_with-2-layers.georefC')
 
     # Export some shapefiles
+    geometry.save_shp('Bief_1_with-2-layers.shp')
     geometry.export_trace_shp('traces.shp')
     geometry.export_limits_shp('limits.shp')
 
