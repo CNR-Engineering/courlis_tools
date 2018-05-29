@@ -68,7 +68,7 @@ class Section:
             self.layers_elev = np.empty((1, self.nb_points))
             self.layers_elev[0, :] = self.z - thickness
         else:
-            self.layers_elev = np.vstack((self.layers_elev, self.layers_elev[self.nb_layers() - 2] - thickness))
+            self.layers_elev = np.vstack((self.layers_elev, self.layers_elev[self.nb_layers() - 1] - thickness))
 
     def nb_layers(self):
         if self.layers_elev is None:

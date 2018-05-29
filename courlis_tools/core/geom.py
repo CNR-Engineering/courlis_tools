@@ -1,4 +1,4 @@
-from math import sqrt
+import numpy as np
 import shapefile
 
 from .section import Section
@@ -75,11 +75,23 @@ class Geometry:
                 if line == '':
                     eof = True
 
-    def add_layer(self, name, thickness):
+    def add_constant_layer(self, name, thickness):
         self.nb_layers += 1
         self.layer_names.append(name)
         for section in self.sections:
             section.add_layer(thickness)
+
+    def add_linear_interp_layer(self, name, PK, thickness):
+        if len(PK) != len(thickness):
+            raise GeometryRequestException('Arrays have not the same length!')
+        if np.any(np.ediff1d(PK) < 0):
+            raise GeometryRequestException('PK are not strictly in increasing')
+        self.nb_layers += 1
+        self.layer_names.append(name)
+        for section in self.sections:
+            h = np.interp(section.PK, PK, thickness, right=0, left=0)
+            print(h)
+            section.add_layer(h)
 
     def save_ST(self, filename):
         with open(filename, 'w') as fileout:

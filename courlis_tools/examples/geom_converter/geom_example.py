@@ -11,8 +11,9 @@ try:
     geometry.save_ST('Bief_1_out.ST')
 
     # Add some constant deposit layers
-    geometry.add_layer('sable', 1.0)
-    geometry.add_layer('vase', 2.0)
+    geometry.add_constant_layer('mud', 1.0)
+    geometry.add_constant_layer('sand', 2.0)
+    geometry.add_linear_interp_layer('gravel', [15200, 154000, 158000], [0.5, 3, 0])
 
     # Export as georefC
     geometry.save_courlis('Bief_1_with-2-layers.georefC')
