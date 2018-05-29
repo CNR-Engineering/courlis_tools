@@ -1,11 +1,7 @@
-from math import sqrt
-import numpy as np
+import shapefile
 
-
-class GeometryRequestException(Exception):
-    """Custom exception for geometry parser"""
-    def __init__(self, message):
-        super().__init__(message)
+from .section import Section
+from .utils import GeometryRequestException
 
 
 class Geometry:
@@ -126,6 +122,31 @@ class Geometry:
                         layers_str = ' '.join([Geometry.COURLIS_FLOAT_FMT % zl for zl in section.layers_elev[:, i]])
                         fileout.write('%f %f %s B %f %f\n' % (dist, z, layers_str, x, y))
 
+    def export_trace_shp(self, filename):
+        w = shapefile.Writer(shapefile.POLYLINEZ)
+        w.field('profil', 'C', '32')
+        w.field('PK', 'N', decimal=6)
+        for section in self.sections:
+            coord = [(x, y, z) for x, y, z in zip(section.x, section.y, section.z)]
+            w.line(parts=[coord])
+            w.record(section.name, section.PK)
+        w.save(filename)
+
+    def export_limits_shp(self, filename):
+        limits = {}
+        for section in self.sections:
+            for limit, index in section.limits.items():
+                if limit not in limits:
+                    limits[limit] = []
+                limits[limit].append((section.x[index], section.y[index]))
+
+        w = shapefile.Writer(shapefile.POLYLINEZ)
+        w.field('name', 'C', '32')
+        for limit, coord in limits.items():
+            w.line(parts=[coord])
+            w.record(limit)
+        w.save(filename)
+
     def __iter__(self):
         return self
 
@@ -137,91 +158,3 @@ class Geometry:
         except IndexError:
             self.iter_pos = 0
             raise StopIteration
-
-
-class Section:
-    """
-    Geometry of a cross-section
-
-    id <int>: profile identifier
-    name <str>: profile name
-    PK <str>: distance along the hydraulic axis
-
-    x <numpy 1D-array>: point coordinates along x axis
-    y <numpy 1D-array>: point coordinates along y axis
-    distances <numpy 1D-array>: cumulative distance from first point along the profile
-    nb_points <int>: number of points
-    limits <{limit_name: point_numbering}>: position of limits
-
-    nb_layers: number of sediment layers
-    layer_elev <numpy 2D-array>: (nb_layers, nb_points)
-    layer_names <[str]>: (nb_layers)
-    """
-    def __init__(self, id, name, PK):
-        self.id = id
-        self.name = name
-        self.PK = PK
-
-        self.x = np.array([])
-        self.y = np.array([])
-        self.z = np.array([])
-        self.distances = np.array([])
-        self.nb_points = 0
-        self.limits = {}
-
-        self.nb_layers = 0
-        self.layers_elev = None
-        self.layer_names = []
-
-    def get_limit(self, limit_name):
-        try:
-            return self.limits[limit_name]
-        except KeyError:
-            raise GeometryRequestException('Limit %s is not found in %s' % (limit_name, self))
-
-    def point_index_limit(self, i):
-        for limit_name, index in self.limits.items():
-            if index == i:
-                return limit_name
-        return None
-
-    def allocate(self, nb_points, nb_layers=0):
-        self.x = np.empty(nb_points)
-        self.y = np.empty(nb_points)
-        self.z = np.empty(nb_points)
-        self.distances = np.empty(nb_points)
-        self.nb_points = nb_points
-
-    def set_point(self, i, x, y, z, limit=None):
-        self.x[i] = x
-        self.y[i] = y
-        self.z[i] = z
-        if limit is not None:
-            self.limits[limit] = i
-        if i == 0:
-            self.distances[i] = 0
-        else:
-            self.distances[i] = self.distances[i - 1] + \
-                                sqrt((self.x[i] - self.x[i - 1])**2 + (self.y[i] - self.y[i - 1])**2)
-
-    def add_layer(self, name, thickness):
-        self.nb_layers += 1
-        self.layer_names.append(name)
-
-        if self.layers_elev is None:
-            self.layers_elev = np.empty((self.nb_layers, self.nb_points))
-            self.layers_elev[0, :] = self.z - thickness
-        else:
-            self.layers_elev = np.vstack((self.layers_elev, self.layers_elev[self.nb_layers - 2] - thickness))
-
-    def iter_on_points(self):
-        for i, (x, y, z) in enumerate(zip(self.x, self.y, self.z)):
-            limit = self.point_index_limit(i)
-            limit_str = limit if limit is not None else ''
-            yield x, y, z, limit_str
-
-    def check_elevations(self):
-        pass  #TODO
-
-    def __repr__(self):
-        return 'Section #%i (%s) at PK %f' % (self.id, self.name, self.PK)

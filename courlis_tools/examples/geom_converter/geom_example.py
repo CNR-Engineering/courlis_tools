@@ -18,6 +18,10 @@ try:
     # Export as georefC
     geometry.save_courlis('Bief_1_with-2-layers.georefC')
 
+    # Export some shapefiles
+    geometry.export_trace_shp('traces.shp')
+    geometry.export_limits_shp('limits.shp')
+
 except geom.GeometryRequestException as e:
     print(e)
     exit(1)
