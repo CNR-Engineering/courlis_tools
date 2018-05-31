@@ -90,7 +90,6 @@ class Geometry:
         self.layer_names.append(name)
         for section in self.sections:
             h = np.interp(section.PK, PK, thickness, right=0, left=0)
-            print(h)
             section.add_layer(h)
 
     def save_ST(self, filename):
@@ -161,10 +160,10 @@ class Geometry:
         w.field('PK', 'N', decimal=6)
         w.field('dist', 'N', decimal=6)
         for name in self.layer_names:
-            w.field(name, 'N', decimal=6)
+            w.field('Z_' + name, 'N', decimal=6)
         for section in self.sections:
             for i, (dist, x, y, z) in enumerate(zip(section.distances, section.x, section.y, section.z)):
-                w.point(x, y, z)
+                w.point(x, y, z, shapeType=shapefile.POINTZ)
                 if self.nb_layers == 0:
                     layers_elev = []
                 else:
@@ -178,7 +177,7 @@ class Geometry:
         w.field('PK', 'N', decimal=6)
         for section in self.sections:
             coord = [(x, y, z) for x, y, z in zip(section.x, section.y, section.z)]
-            w.line(parts=[coord])
+            w.line(parts=[coord], shapeType=shapefile.POLYLINEZ)
             w.record(section.name, section.PK)
         w.save(filename)
 
@@ -193,7 +192,7 @@ class Geometry:
         w = shapefile.Writer(shapefile.POLYLINEZ)
         w.field('name', 'C', '32')
         for limit, coord in limits.items():
-            w.line(parts=[coord])
+            w.line(parts=[coord], shapeType=shapefile.POLYLINEZ)
             w.record(limit)
         w.save(filename)
 
