@@ -10,7 +10,7 @@ class Section:
 
     id <int>: profile identifier
     name <str>: profile name
-    PK <str>: distance along the hydraulic axis
+    PK <float>: distance along the hydraulic axis
 
     x <numpy 1D-array>: point coordinates along x axis
     y <numpy 1D-array>: point coordinates along y axis
@@ -31,6 +31,19 @@ class Section:
         self.nb_points = 0
         self.limits = {}
         self.layers_elev = None
+
+    def set_points_from_trans(self, dist_array, z_array):
+        if len(dist_array) != len(z_array):
+            raise GeometryRequestException('Arrays have not the same length')
+        self.allocate(len(dist_array))
+        for i, (dist, z) in enumerate(zip(dist_array, z_array)):
+            if i == 0:
+                limit = 'RD'
+            elif i == (self.nb_points - 1):
+                limit = 'RG'
+            else:
+                limit = None
+            self.set_point(i, self.PK, dist, z, limit)
 
     def get_limit(self, limit_name):
         try:

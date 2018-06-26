@@ -25,6 +25,8 @@ class Geometry:
         try:
             if filename.endswith('.ST'):
                 self.load_ST()
+            elif filename.endswith('.georef'):
+                self.load_georef()
             else:
                 raise NotImplementedError('File format is not supported!')
         except FileNotFoundError as e:
@@ -75,6 +77,34 @@ class Geometry:
                 if line == '':
                     eof = True
 
+    def load_georef(self):
+        """
+        Build horizontally
+        Distance is supposed to be from left to right bank
+        """
+        with open(self.filename, 'r') as filein:
+            id_section = 0
+            name = ''
+            PK = -1.0
+            dist, z = [], []
+            for line in filein:
+                if line.startswith('PROFIL'):
+                    if dist:
+                        section = Section(id_section, name, PK)
+                        section.set_points_from_trans(dist, z)
+                        self.sections.append(section)
+                    _, _, name, PK_str = line.split()
+                    PK = float(PK_str)
+                    dist, z = [], []
+                    id_section += 1
+                else:
+                    dist_str, z_str, _ = line.split()
+                    dist.append(float(dist_str))
+                    z.append(float(z_str))
+            section = Section(id_section, name, PK)
+            section.set_points_from_trans(dist, z)
+            self.sections.append(section)
+
     def add_constant_layer(self, name, thickness):
         self.nb_layers += 1
         self.layer_names.append(name)
@@ -96,7 +126,7 @@ class Geometry:
         with open(filename, 'w') as fileout:
             for section in self.sections:
                 fileout.write('     %i     0     0    %i  %s   %s\n' % (section.id, section.nb_points,
-                                                                      section.PK, section.name))
+                                                                        section.PK, section.name))
                 for x, y, z, limit in section.iter_on_points():
                     fileout.write(' %12.4f %12.4f %12.4f %s\n' % (x, y, z, limit))
                 fileout.write(Geometry.ST_SECTION_ENDING + '\n')
