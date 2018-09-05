@@ -1,6 +1,7 @@
 """
 Longitudinal Profile
 """
+import argparse
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
 import sys
 
@@ -45,15 +46,20 @@ class LongitudinalProfile(DynamicGraphView):
             QMessageBox.critical(self, 'Error', "File not found: %s" % filename,
                                  QMessageBox.Ok)
             return
-        self.fill_series_list(self.data.variable_names)
+        self.fill_variables_list()
+        self.fill_times_list()
         self.status_text.setText("Loaded " + filename)
-
+        super().load_file()
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_file', help='Courlis result file (*.opt, *.plong)')
+    args = parser.parse_args()
+
     app = QApplication(sys.argv)
     form = LongitudinalProfile()
-    form.load_file('../../Calcul_Courlis_1/Resultats/mascaret0.opt')  #FIXME
+    form.load_file(args.input_file)
     form.show()
     app.exec_()
 
