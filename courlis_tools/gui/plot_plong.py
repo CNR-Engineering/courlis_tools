@@ -1,68 +1,49 @@
 """
-Longitudinal Profile
+Longitudinal Profile Viewer
 """
-import argparse
-from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
-import sys
+from itertools import cycle
 
-from courlis_tools.core.parsers.read_opt import ReadOptFile
-from courlis_tools.core.parsers.read_plong import ReadPlongFile
-from courlis_tools.core.utils import CourlisException
-from courlis_tools.gui.utils import DynamicGraphView
+from courlis_tools.gui.utils import GenericProfile, LINE_STYLES, TIME_UNITS
 
 
-class LongitudinalProfile(DynamicGraphView):
+class LongitudinalProfileViewer(GenericProfile):
 
-    def __init__(self, parent=None):
-        super().__init__('Longitudinal Profile', parent)
+    FLOAT_FORMAT = '{:.2f}'
 
-    def on_about(self):
-        QMessageBox.about(self, "About", __doc__.strip())
+    def __init__(self, parent):
+        super().__init__(parent, 'Time:')
 
-    def load_file(self, filename=None):
-        if filename is None:
-            filename, _ = QFileDialog.getOpenFileName(self, 'Open a data file', '',
-                'Opthyca files (*.opt);;Longitudinal profiles (*.plong);;All Files (*.*)',
-                options=QFileDialog.Options() | QFileDialog.ExistingFile)
-            if not filename:
-                return
+    def fill_secondary_list(self):
+        self.secondary_labels = [str(x) for x in self.parent.data.time_serie]
+        super().fill_secondary_list()
 
-        try:
-            if filename.endswith('.opt'):
-                with ReadOptFile(filename) as opt:
-                    self.data = opt.res_plong
-            elif filename.endswith('.plong'):
-                with ReadPlongFile(filename) as plong:
-                    self.data = plong.res_plong
-            else:
-                QMessageBox.critical(self, 'Error', "Unsupported file format (only *.opt)",
-                                     QMessageBox.Ok)
-                return
-        except CourlisException as e:
-            QMessageBox.critical(self, 'Error', "Error while reading input file\n%s" % e,
-                                 QMessageBox.Ok)
-            return
-        except FileNotFoundError:
-            QMessageBox.critical(self, 'Error', "File not found: %s" % filename,
-                                 QMessageBox.Ok)
-            return
-        self.fill_variables_list()
-        self.fill_times_list()
-        self.status_text.setText("Loaded " + filename)
-        super().load_file()
+    def update_secondary_list(self):
+        unit_text = [button.text() for button in self.qbg_time_unit.buttons() if button.isChecked()][0]
+        unit_factor = TIME_UNITS[unit_text]
+        for i, time in enumerate(self.parent.data.time_serie):
+            self.qlw_secondary_list.item(i).setText(self.FLOAT_FORMAT.format(time / unit_factor))
+        self.on_show()
 
+    def time_unit_changed(self):
+        self.update_secondary_list()
+        self.on_show()
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('input_file', help='Courlis result file (*.opt, *.plong)')
-    args = parser.parse_args()
+    def on_show(self):
+        super().on_show()
 
-    app = QApplication(sys.argv)
-    form = LongitudinalProfile()
-    form.load_file(args.input_file)
-    form.show()
-    app.exec_()
+        has_series = False
+        for item, line_style in zip(self.qlw_variables.selectedItems(), cycle(LINE_STYLES)):
+            name = item.text()
+            if self.qcb_show_points.isChecked():
+                line_style += 'o'
+            for i, time in enumerate(self.parent.data.time_serie):
+                time_item = self.qlw_secondary_list.item(i)
+                if time_item.isSelected():
+                    series = self.parent.data.get_variable_with_time(name, time)
+                    self.axes.plot(self.parent.data.sections, series, line_style, label=name + ' ' + time_item.text())
+                    has_series = True
 
-
-if __name__ == '__main__':
-    main()
+        if has_series and self.qcb_show_legend.isChecked():
+            self.axes.legend()
+        self.axes.set_xlabel('Distance [m]')
+        self.canvas.draw()

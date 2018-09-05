@@ -1,3 +1,5 @@
+import numpy as np
+
 from courlis_tools.core.utils import CourlisException
 
 
@@ -29,6 +31,14 @@ class ResLongProfil:
         self.time_serie.append(time)
         self.nb_frames += 1
 
-    def get_series_data(self, varname, time):
+    def get_variable_with_time(self, varname, time):
         pos_var = self.variable_names.index(varname)
         return self.data[time][:, pos_var]
+
+    def get_variable_with_section(self, varname, section):
+        pos_var = self.variable_names.index(varname)
+        pos_section = self.sections.index(section)
+        result = []
+        for time in self.time_serie:
+            result.append(self.data[time][pos_section, pos_var])
+        return np.array(result)

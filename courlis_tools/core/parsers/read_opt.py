@@ -3,17 +3,17 @@ Lecture d'un fichier Opthyca (*.opt)
 
 ## Description du format de fichier `opt`
 Deux parties :
-* variables : liste des variables avec 4 colonnes
+*  [variables] suivi de la liste des variables avec 4 colonnes
     * nom
     * abbréviation
     * unité
     * ? (un entier)
-* resultats : avec de multiples colonnes
+* [resultats] suivi d'un tableau avec pour chaque ligne les colonnes suivantes
     * temps <float>
     * bief? <int>
     * id_profil <str>
     * pk <float>
-    * une colonne par variable
+    * une valeur par variable
 
 Le fichier peut commencer par des lignes des commentaires si celles-ci sont précédées du caractère `#`
 
