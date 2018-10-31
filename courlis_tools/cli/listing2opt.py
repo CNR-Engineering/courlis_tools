@@ -1,15 +1,14 @@
 """
-Read
+Convert Courlis listing binary file to Opthyca file format
 """
+import argparse
 import scipy.io as spio
 import numpy as np
 
 
-def listing2opt(filename):
-    nom = '../../Calcul_Courlis_1/Resultats/mascaret0'
-
+def listing2opt(in_listing, out_opt):
     try:
-        with spio.FortranFile(nom + '.listingcourlis','r') as f:
+        with spio.FortranFile(in_listing, 'r') as f:
             res = f.read_reals(float)
             while True:
                 res = np.vstack((res, f.read_reals(float)))
@@ -53,7 +52,7 @@ def listing2opt(filename):
 
         OPT = np.vstack((OPT, Resultats))
 
-    with open(nom+'.opt','w') as w:
+    with open(out_opt, 'w') as w:
         w.write('[variables]\n')
         w.write('\"Cote de l eau\";\"Z\";\"m\";3\n')
         w.write('\"Cote du fond\";\"ZREF\";\"m\";4\n')
@@ -77,3 +76,11 @@ def listing2opt(filename):
             for j in range(1, np.size(OPT, 1)):
                 w.write(";{:16.8f}".format(OPT[i, j]))
             w.write("\n")
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('in_listing', help="Courlis listing binary file")
+    parser.add_argument('out_opt', help="Opthyca file")
+    args = parser.parse_args()
+    listing2opt(args.in_listing, args.out_opt)
