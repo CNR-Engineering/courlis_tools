@@ -1,2 +1,5 @@
 matplotlib
+numpy
 PyQt5
+scipy
+pyshp

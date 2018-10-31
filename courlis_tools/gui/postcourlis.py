@@ -65,7 +65,7 @@ class PostCourlisWindow(QMainWindow):
                 with ReadPlongFile(filename) as plong:
                     self.data = plong.res_plong
             else:
-                QMessageBox.critical(self, 'Error', "Unsupported file format (only *.opt)",
+                QMessageBox.critical(self, 'Error', "Unsupported file format (only *.opt or *.plong)",
                                      QMessageBox.Ok)
                 return
         except CourlisException as e:
