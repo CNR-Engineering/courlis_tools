@@ -1,10 +1,10 @@
 """
-TODO
+Utils to display figures
 """
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-from PyQt5.QtWidgets import QAbstractItemView, QButtonGroup, QCheckBox, QHBoxLayout, \
+from PyQt5.QtWidgets import QAbstractItemView, QButtonGroup, QCheckBox, QFrame, QHBoxLayout, \
     QLabel, QListWidget, QPushButton, QRadioButton, QSplitter, QStyle, QVBoxLayout, QWidget
 
 
@@ -66,6 +66,9 @@ class GenericProfile(QWidget):
         self.qlw_secondary_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.qlw_secondary_list.itemSelectionChanged.connect(self.on_show)
 
+        qf_separator = QFrame()
+        qf_separator.setFrameShape(QFrame.HLine)
+
         qhb_time_unit = QHBoxLayout()
         for unit in TIME_UNITS.keys():
             qrb_unit = QRadioButton(unit)
@@ -93,14 +96,16 @@ class GenericProfile(QWidget):
 
         qvb_options = QVBoxLayout()
         qvb_options.addWidget(QLabel('Variables:'))
-        qvb_options.addWidget(self.qlw_variables)
+        qvb_options.addWidget(self.qlw_variables, 20)
         qvb_options.addWidget(QLabel(self.secondary_label))
-        qvb_options.addWidget(self.qlw_secondary_list)
+        qvb_options.addWidget(self.qlw_secondary_list, 20)
+        qvb_options.addStretch(1)
+        qvb_options.addWidget(qf_separator)
+        qvb_options.addStretch(1)
         qvb_options.addLayout(qhb_time_unit)
         qvb_options.addWidget(self.qcb_show_legend)
         qvb_options.addWidget(self.qcb_show_points)
         qvb_options.addWidget(self.qpb_show)
-        qvb_options.addStretch(1)
         qw_options = QWidget()
         qw_options.setLayout(qvb_options)
 
