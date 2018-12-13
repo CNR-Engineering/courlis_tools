@@ -22,7 +22,6 @@ class LongitudinalProfileViewer(GenericProfile):
         unit_factor = TIME_UNITS[unit_text]
         for i, time in enumerate(self.parent.data.time_serie):
             self.qlw_secondary_list.item(i).setText(self.FLOAT_FORMAT.format(time / unit_factor))
-        self.on_show()
 
     def time_unit_changed(self):
         self.update_secondary_list()

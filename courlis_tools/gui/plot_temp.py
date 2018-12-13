@@ -19,7 +19,6 @@ class TemporalProfileViewer(GenericProfile):
     def update_secondary_list(self):
         for i, section in enumerate(self.parent.data.sections):
             self.qlw_secondary_list.item(i).setText(str(section))
-        self.on_show()
 
     def time_unit_changed(self):
         self.on_show()

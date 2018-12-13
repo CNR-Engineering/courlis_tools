@@ -1,8 +1,8 @@
 """
 TODO
 """
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from PyQt5.QtWidgets import QAbstractItemView, QButtonGroup, QCheckBox, QHBoxLayout, \
     QLabel, QListWidget, QPushButton, QRadioButton, QSplitter, QStyle, QVBoxLayout, QWidget
@@ -64,7 +64,7 @@ class GenericProfile(QWidget):
         self.qlw_variables.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.qlw_variables.itemSelectionChanged.connect(self.on_show)
         self.qlw_secondary_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.qlw_secondary_list.itemSelectionChanged.connect(self.update_secondary_list)
+        self.qlw_secondary_list.itemSelectionChanged.connect(self.on_show)
 
         qhb_time_unit = QHBoxLayout()
         for unit in TIME_UNITS.keys():
