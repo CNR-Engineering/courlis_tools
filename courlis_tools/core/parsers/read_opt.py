@@ -23,7 +23,7 @@ En pratique il y a 3 fichiers qui contiennent des résultats de type profil en l
 - `_ecr.opt` (FICHIER RESULTATS si POST-PROCESSEUR = 2) :
 - `*.plong` (FICHIER RESULTATS PROFIL EN LONG)
 
-Ces fichiers sont lus séparement car ils contiennent des temps différents en général...
+Ces fichiers sont lus séparément car ils contiennent des temps différents en général...
 """
 import numpy as np
 

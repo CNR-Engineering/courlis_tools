@@ -3,7 +3,7 @@ PostCourlis
 
 Tool to visualize Courlis results
 
-© CNR 2018 - LDN
+https://github.com/CNR-Engineering
 """
 import functools
 from PyQt5.QtWidgets import QApplication, QAction, QFileDialog, QLabel, \
@@ -36,17 +36,17 @@ class PostCourlisWindow(QMainWindow):
 
         self.create_menu()
 
-        self.plong = LongitudinalProfileViewer(self)
-        self.temp = TemporalProfileViewer(self)
+        self.plong_viewer = LongitudinalProfileViewer(self)
+        self.temp_viewer = TemporalProfileViewer(self)
 
-        self.tabs_list = []
+        self.viewers_list = []
         self.tabs = QTabWidget()
-        self.add_tab(self.plong, "Longitudinal Profile")
-        self.add_tab(self.temp, "Temporal Profile")
+        self.add_viewer(self.plong_viewer, "Longitudinal Profile")
+        self.add_viewer(self.temp_viewer, "Temporal Profile")
         self.setCentralWidget(self.tabs)
 
-    def add_tab(self, widget, label):
-        self.tabs_list.append(widget)
+    def add_viewer(self, widget, label):
+        self.viewers_list.append(widget)
         self.tabs.addTab(widget, label)
 
     def load_file(self, filename=None):
@@ -76,7 +76,7 @@ class PostCourlisWindow(QMainWindow):
             QMessageBox.critical(self, 'Error', "File not found: %s" % filename,
                                  QMessageBox.Ok)
             return
-        for tag in self.tabs_list:
+        for tag in self.viewers_list:
             tag.fill_variables_list()
             tag.fill_secondary_list()
             tag.set_default_selection()
@@ -116,7 +116,7 @@ class PostCourlisWindow(QMainWindow):
         return action
 
     def on_about(self):
-        QMessageBox.about(self, "About", __doc__.strip())
+        QMessageBox.about(self, 'About', __doc__.strip())
 
 
 if __name__ == '__main__':

@@ -3,10 +3,10 @@ Longitudinal Profile Viewer
 """
 from itertools import cycle
 
-from courlis_tools.gui.utils import GenericProfile, LINE_STYLES, TIME_UNITS
+from courlis_tools.gui.utils import CommonDoublePanelWidget, LINE_STYLES, LEGEND_UNITS, TIME_UNITS
 
 
-class LongitudinalProfileViewer(GenericProfile):
+class LongitudinalProfileViewer(CommonDoublePanelWidget):
 
     FLOAT_FORMAT = '{:.2f}'
 
@@ -18,17 +18,17 @@ class LongitudinalProfileViewer(GenericProfile):
         super().fill_secondary_list()
 
     def update_secondary_list(self):
-        unit_text = [button.text() for button in self.qbg_time_unit.buttons() if button.isChecked()][0]
-        unit_factor = TIME_UNITS[unit_text]
+        unit_factor = TIME_UNITS[self.get_unit_text()]
         for i, time in enumerate(self.parent.data.time_serie):
             self.qlw_secondary_list.item(i).setText(self.FLOAT_FORMAT.format(time / unit_factor))
 
     def time_unit_changed(self):
         self.update_secondary_list()
-        self.on_show()
+        super().time_unit_changed()
 
     def on_show(self):
         super().on_show()
+        unit = LEGEND_UNITS[self.get_unit_text()]
 
         has_series = False
         for item, line_style in zip(self.qlw_variables.selectedItems(), cycle(LINE_STYLES)):
@@ -39,7 +39,8 @@ class LongitudinalProfileViewer(GenericProfile):
                 time_item = self.qlw_secondary_list.item(i)
                 if time_item.isSelected():
                     series = self.parent.data.get_variable_with_time(name, time)
-                    self.axes.plot(self.parent.data.sections, series, line_style, label=name + ' ' + time_item.text())
+                    self.axes.plot(self.parent.data.sections, series, line_style,
+                                   label=name + ' / ' + time_item.text() + ' ' + unit)
                     has_series = True
 
         if has_series and self.qcb_show_legend.isChecked():

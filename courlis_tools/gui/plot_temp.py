@@ -4,10 +4,10 @@ Temporal Profile Viewer
 from itertools import cycle
 import numpy as np
 
-from courlis_tools.gui.utils import GenericProfile, LINE_STYLES, TIME_UNITS
+from courlis_tools.gui.utils import CommonDoublePanelWidget, LINE_STYLES, TIME_UNITS
 
 
-class TemporalProfileViewer(GenericProfile):
+class TemporalProfileViewer(CommonDoublePanelWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent, 'Position [m]:')
@@ -20,12 +20,9 @@ class TemporalProfileViewer(GenericProfile):
         for i, section in enumerate(self.parent.data.sections):
             self.qlw_secondary_list.item(i).setText(str(section))
 
-    def time_unit_changed(self):
-        self.on_show()
-
     def on_show(self):
         super().on_show()
-        unit_text = [button.text() for button in self.qbg_time_unit.buttons() if button.isChecked()][0]
+        unit_text = self.get_unit_text()
         unit_factor = TIME_UNITS[unit_text]
 
         has_series = False
@@ -37,8 +34,8 @@ class TemporalProfileViewer(GenericProfile):
                 section_item = self.qlw_secondary_list.item(i)
                 if section_item.isSelected():
                     series = self.parent.data.get_variable_with_section(name, section)
-                    self.axes.plot(np.array(self.parent.data.time_serie)/unit_factor,
-                                   series, line_style, label=name + ' ' + section_item.text())
+                    self.axes.plot(np.array(self.parent.data.time_serie)/unit_factor, series, line_style,
+                                   label=name + ' / ' + section_item.text())
                     has_series = True
 
         if has_series and self.qcb_show_legend.isChecked():

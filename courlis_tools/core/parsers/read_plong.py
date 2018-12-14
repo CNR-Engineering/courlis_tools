@@ -27,6 +27,7 @@ class ReadPlongFile:
         self.lines = []
         self.current_line_id = 0
         self.nb_sections = 0
+        self.nb_layers = 0
 
     def error(self, message, show_line=True):
         error_message = message + '\n'
@@ -91,9 +92,19 @@ class ReadPlongFile:
             pk_id, pk, values = self._read_line_resultat()
             if pk_id != i + 1:
                 self.error('Unexpected section number: %i (instead of %i)' % (pk_id, i + 1))
-            if i == 1:
+            if i == 0:
+                # There is at least 3 compulsory layers: water, bottom (= first top layer elevation) and rigid bed
+                self.nb_layers = len(values) - 2
+                if self.nb_layers < 1:
+                    raise CourlisException('No layer could be found!')
                 for j in range(len(values)):
-                    self.res_plong.add_variable('Z%i' % (j + 1))
+                    if j == 0:
+                        var_name = 'Z_water'
+                    elif j == len(values) - 1:
+                        var_name = 'Z_rb'
+                    else:
+                        var_name = 'Z_%i' % j
+                    self.res_plong.add_variable(var_name)
             self.res_plong.add_section(pk)
             all_values.append(values)
         self.res_plong.add_frame(time, np.array(all_values))
