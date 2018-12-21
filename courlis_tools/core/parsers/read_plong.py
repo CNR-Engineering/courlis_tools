@@ -1,5 +1,6 @@
 """
 Lecture d'un fichier de profil en long Courlis (*.plong)
+/!\ Ce format ne supporte qu'un bief unique (son nom est spécifié par dans `REACH_NAME`)
 
 * Nombre de sections
 * Pour chaque enregistrement temporel
@@ -14,6 +15,9 @@ import numpy as np
 
 from courlis_tools.core.res_plong import ResLongProfil
 from courlis_tools.core.utils import CourlisException
+
+
+REACH_NAME = 'Bief_1'  # default unique river reach name
 
 
 class ReadPlongFile:
@@ -88,6 +92,7 @@ class ReadPlongFile:
     def read_first_frame(self):
         time = self._read_line_time()
         all_values = []
+        self.res_plong.add_reach(REACH_NAME)
         for i in range(self.nb_sections):
             pk_id, pk, values = self._read_line_resultat()
             if pk_id != i + 1:
@@ -105,9 +110,9 @@ class ReadPlongFile:
                     else:
                         var_name = 'Z_%i' % j
                     self.res_plong.add_variable(var_name)
-            self.res_plong.add_section(pk)
+            self.res_plong.add_section(REACH_NAME, pk)
             all_values.append(values)
-        self.res_plong.add_frame(time, np.array(all_values))
+        self.res_plong.add_frame(time, {REACH_NAME: np.array(all_values)})
 
     def read_other_frames(self):
         while True:
@@ -116,21 +121,23 @@ class ReadPlongFile:
             except IndexError:
                 break
             all_values = []
-            for i, pk_first in enumerate(self.res_plong.sections):
+            for i, pk_first in enumerate(self.res_plong.model[REACH_NAME]):
                 pk_id, pk, values = self._read_line_resultat()
                 if pk_id != i + 1:
                     self.error('Unexpected section number: %i (instead of %i)' % (pk_id, i + 1))
                 if pk != pk_first:
                     self.error('Unexpected PK: %f (instead of %f)' % (pk, pk_first))
                 all_values.append(values)
-            self.res_plong.add_frame(time, np.array(all_values))
+            self.res_plong.add_frame(time, {REACH_NAME: np.array(all_values)})
 
 
 if __name__ == '__main__':
     try:
-        with ReadPlongFile('mascaret.plong') as opt:
-            for time in opt.res_plong.time_serie:
-                print("~> Time: %f" % time)
-                print(opt.res_plong.data[time].shape)
+        with ReadPlongFile('../../examples/results/result.plong') as plong:
+            print(plong.res_plong.summary())
+            for i, time in enumerate(plong.res_plong.time_serie):
+                print("~> Frame %i: %f s" % (i, time))
+                for reach_name in plong.res_plong.model.keys():
+                    print("    - Reach: %s: shape=%s" % (reach_name, plong.res_plong.data[time][reach_name].shape))
     except CourlisException as e:
         print(e)

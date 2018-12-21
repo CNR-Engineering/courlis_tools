@@ -26,6 +26,10 @@ class LongitudinalProfileViewer(CommonDoublePanelWidget):
         self.update_secondary_list()
         super().time_unit_changed()
 
+    def reach_changed(self):
+        super().reach_changed()
+        self.on_show()
+
     def on_show(self):
         super().on_show()
         unit = LEGEND_UNITS[self.get_unit_text()]
@@ -38,8 +42,8 @@ class LongitudinalProfileViewer(CommonDoublePanelWidget):
             for i, time in enumerate(self.parent.data.time_serie):
                 time_item = self.qlw_secondary_list.item(i)
                 if time_item.isSelected():
-                    series = self.parent.data.get_variable_with_time(name, time)
-                    self.axes.plot(self.parent.data.sections, series, line_style,
+                    series = self.parent.data.get_variable_with_time(time, self.reach_name, name)
+                    self.axes.plot(self.parent.data.model[self.reach_name], series, line_style,
                                    label=name + ' / ' + time_item.text() + ' ' + unit)
                     has_series = True
 

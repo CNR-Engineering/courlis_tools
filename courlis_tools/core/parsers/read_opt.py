@@ -2,18 +2,18 @@
 Lecture d'un fichier Opthyca (*.opt)
 
 ## Description du format de fichier `opt`
-Deux parties :
-*  [variables] suivi de la liste des variables avec 4 colonnes
-    * nom
-    * abbréviation
-    * unité
-    * ? (un entier)
-* [resultats] suivi d'un tableau avec pour chaque ligne les colonnes suivantes
-    * temps <float>
-    * bief? <int>
+Two parts :
+*  [variables] followed by a list of variables with 4 columns:
+    * name
+    * abbreviation
+    * unit
+    * ? (an integer)
+* [resultats] followed by a table with rows whose columns are:
+    * time <float>
+    * reach <float> (could be an integer)
     * id_profil <str>
     * pk <float>
-    * une valeur par variable
+    * a value per variable
 
 Le fichier peut commencer par des lignes des commentaires si celles-ci sont précédées du caractère `#`
 
@@ -72,7 +72,7 @@ class ReadOptFile:
     def _read_line_resultat(self):
         row = self._read_line()
         try:
-            time_str, _, _, pk_str, values_str = row.split(';', maxsplit=4)
+            time_str, bief_name, _, pk_str, values_str = row.split(';', maxsplit=4)
         except ValueError:
             self.error('Number of values (separated by a semi-colon) has to be more than 4!')
 
@@ -85,7 +85,7 @@ class ReadOptFile:
             return
         if len(values) != self.res_plong.nb_variables:
             self.error('Number of values not coherent: %i instead of %i' % (len(values), self.res_plong.nb_variables))
-        return time, section_pk, values
+        return time, bief_name.strip(), section_pk, values
 
     def _read_data(self):
         # Skip comments before variable definition
@@ -111,30 +111,38 @@ class ReadOptFile:
             self.error('End of file reached suddently!', show_line=False)
 
     def read_first_frame(self):
-        time, pk, values = self._read_line_resultat()
+        time, reach_name, pk, values = self._read_line_resultat()
         first_time = time
-        all_values = []
+        all_values = {}
+        prev_bief_name = ''
         while time == first_time:
-            self.res_plong.add_section(pk)
-            all_values.append(values)
-            time, pk, values = self._read_line_resultat()
-        self.res_plong.add_frame(first_time, np.array(all_values))
+            if prev_bief_name != reach_name:
+                self.res_plong.add_reach(reach_name)
+                all_values[reach_name] = []
+            self.res_plong.add_section(reach_name, pk)
+            all_values[reach_name].append(values)
+            prev_bief_name = reach_name
+            time, reach_name, pk, values = self._read_line_resultat()
+        self.res_plong.add_frame(first_time, {reach_name: np.array(values) for reach_name, values in all_values.items()})
 
     def read_other_frames(self):
         while True:
             self.current_line_id = self.current_line_id - 1  # to read again previous line
             first_time = None
-            all_values = []
-            for i, pk in enumerate(self.res_plong.sections):
-                time, section_pk, values = self._read_line_resultat()
-                if first_time is None:
-                    first_time = time
-                if time != first_time:
-                    self.error('Unexpected time: %f (instead of %f)' % (time, first_time))
-                if section_pk != pk:
-                    self.error('Unexpected PK: %f (instead of %f)' % (pk, section_pk))
-                all_values.append(values)
-            self.res_plong.add_frame(first_time, np.array(all_values))
+            all_values = {}
+            for reach_name, sections in self.res_plong.model.items():
+                all_values[reach_name] = []
+                for i, pk in enumerate(sections):
+                    time, reach_name, section_pk, values = self._read_line_resultat()
+                    if first_time is None:
+                        first_time = time
+                    if time != first_time:
+                        self.error('Unexpected time: %f (instead of %f)' % (time, first_time))
+                    if section_pk != pk:
+                        self.error('Unexpected PK: %f (instead of %f)' % (section_pk, pk))
+                    all_values[reach_name].append(values)
+            self.res_plong.add_frame(first_time,
+                                     {reach_name: np.array(values) for reach_name, values in all_values.items()})
             try:
                 self._read_line_resultat()
             except IndexError:
@@ -143,9 +151,11 @@ class ReadOptFile:
 
 if __name__ == '__main__':
     try:
-        with ReadOptFile('mascaret.opt') as opt:
-            for time in opt.res_plong.time_serie:
-                print("~> Time: %f" % time)
-                print(opt.res_plong.data[time].shape)
+        with ReadOptFile('../../examples/results/result.opt') as opt:
+            print(opt.res_plong.summary())
+            for i, time in enumerate(opt.res_plong.time_serie):
+                print("~> Frame %i: %f s" % (i, time))
+                for reach_name in opt.res_plong.model.keys():
+                    print("    - Reach: %s: shape=%s" % (reach_name, opt.res_plong.data[time][reach_name].shape))
     except CourlisException as e:
         print(e)

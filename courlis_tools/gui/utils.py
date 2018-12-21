@@ -4,7 +4,7 @@ Utils to display figures
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-from PyQt5.QtWidgets import QAbstractItemView, QButtonGroup, QCheckBox, QFrame, QHBoxLayout, \
+from PyQt5.QtWidgets import QAbstractItemView, QButtonGroup, QCheckBox, QComboBox, QFrame, QHBoxLayout, \
     QLabel, QListWidget, QPushButton, QRadioButton, QSplitter, QStyle, QVBoxLayout, QWidget
 
 
@@ -103,6 +103,9 @@ class DoublePanelWidget(QWidget):
     def time_unit_changed(self):
         self.on_show()
 
+    def reach_changed(self):
+        pass
+
     def get_unit_text(self):
         return [button.text() for button in self.qbg_time_unit.buttons() if button.isChecked()][0]
 
@@ -113,9 +116,11 @@ class CommonDoublePanelWidget(DoublePanelWidget):
         super().__init__(parent)
 
         self.secondary_label = label
+        self.secondary_labels = []
+        self.reach_name = ''
         self.qlw_variables = QListWidget()
         self.qlw_secondary_list = QListWidget()
-        self.secondary_labels = []
+        self.qcbx_reaches = QComboBox()
 
         self.create_layout()
         self.on_show()
@@ -126,6 +131,11 @@ class CommonDoublePanelWidget(DoublePanelWidget):
             self.axes.set_ylabel(self.qlw_variables.selectedItems()[0].text())
         else:
             self.axes.set_ylabel('Valeur')
+
+    def fill_reach_list(self):
+        self.qcbx_reaches.clear()
+        for reach_name in self.parent.data.model.keys():
+            self.qcbx_reaches.addItem(reach_name)
 
     def fill_variables_list(self):
         self.qlw_variables.clear()
@@ -138,11 +148,15 @@ class CommonDoublePanelWidget(DoublePanelWidget):
             self.qlw_secondary_list.addItem(str(label))
 
     def create_layout(self):
+        self.qcbx_reaches.currentIndexChanged.connect(self.reach_changed)
+
         self.qlw_variables.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.qlw_variables.itemSelectionChanged.connect(self.on_show)
         self.qlw_secondary_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.qlw_secondary_list.itemSelectionChanged.connect(self.on_show)
 
+        self.qvb_options.addWidget(QLabel('River reach:'))
+        self.qvb_options.addWidget(self.qcbx_reaches)
         self.qvb_options.addWidget(QLabel('Variables:'))
         self.qvb_options.addWidget(self.qlw_variables, 20)
         self.qvb_options.addWidget(QLabel(self.secondary_label))
@@ -155,3 +169,6 @@ class CommonDoublePanelWidget(DoublePanelWidget):
             self.qlw_variables.item(0).setSelected(True)
         if self.qlw_secondary_list.count() > 0:
             self.qlw_secondary_list.item(0).setSelected(True)
+
+    def reach_changed(self):
+        self.reach_name = self.qcbx_reaches.currentText()

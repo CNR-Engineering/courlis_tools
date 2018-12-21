@@ -76,10 +76,17 @@ class PostCourlisWindow(QMainWindow):
             QMessageBox.critical(self, 'Error', "File not found: %s" % filename,
                                  QMessageBox.Ok)
             return
+        if not self.data.model:
+            QMessageBox.critical(self, 'Error', "No river reach found: %s" % filename,
+                                 QMessageBox.Ok)
+            return
+
         for tag in self.viewers_list:
+            tag.fill_reach_list()
             tag.fill_variables_list()
             tag.fill_secondary_list()
             tag.set_default_selection()
+
         self.status_text.setText("Loaded " + filename)
 
     def create_status_bar(self):
